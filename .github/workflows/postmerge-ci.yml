@@ -12,6 +12,8 @@ jobs:
   rust-ci-full:
     name: rust-ci-full
     uses: ./.github/workflows/rust-ci-full.yml
+    with:
+      use_boat: ${{ vars.CI_LINUX_RUNNER == 'boat' }}
     secrets: inherit
 
   v8-canary:

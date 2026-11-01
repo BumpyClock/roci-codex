@@ -19,7 +19,7 @@ jobs:
   build-python-runtime:
     if: github.repository == 'openai/codex'
     name: build-python-runtime
-    runs-on: ubuntu-latest
+    runs-on: boat
     permissions:
       contents: read
     outputs:

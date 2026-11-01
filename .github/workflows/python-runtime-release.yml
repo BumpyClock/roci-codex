@@ -26,7 +26,7 @@ jobs:
     if: github.repository == 'openai/codex'
     name: publish-python-runtime
     needs: prepare-python-runtime
-    runs-on: ubuntu-latest
+    runs-on: boat
     environment: pypi
     permissions:
       contents: read

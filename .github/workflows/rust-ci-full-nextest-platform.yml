@@ -3,6 +3,11 @@ name: rust-ci-full nextest platform
 on:
   workflow_call:
     inputs:
+      use_boat:
+        description: Select Boat only for Linux x64 archive and test jobs
+        required: false
+        default: false
+        type: boolean
       runner:
         required: true
         type: string
@@ -51,7 +56,7 @@ on:
 jobs:
   archive:
     name: Build nextest archive
-    runs-on: ${{ inputs.archive_runner_group != '' && fromJSON(format('{{"group":"{0}","labels":"{1}"}}', inputs.archive_runner_group, inputs.archive_runner_labels)) || inputs.archive_runner != '' && inputs.archive_runner || inputs.runner_group != '' && fromJSON(format('{{"group":"{0}","labels":"{1}"}}', inputs.runner_group, inputs.runner_labels)) || inputs.runner }}
+    runs-on: ${{ inputs.use_boat && startsWith(inputs.target, 'x86_64-unknown-linux-') && 'boat' || inputs.archive_runner_group != '' && fromJSON(format('{{"group":"{0}","labels":"{1}"}}', inputs.archive_runner_group, inputs.archive_runner_labels)) || inputs.archive_runner != '' && inputs.archive_runner || inputs.runner_group != '' && fromJSON(format('{{"group":"{0}","labels":"{1}"}}', inputs.runner_group, inputs.runner_labels)) || inputs.runner }}
     timeout-minutes: 60
     defaults:
       run:
@@ -268,7 +273,7 @@ jobs:
   shard:
     name: Tests shard ${{ matrix.shard }}/4
     needs: archive
-    runs-on: ${{ inputs.runner_group != '' && fromJSON(format('{{"group":"{0}","labels":"{1}"}}', inputs.runner_group, inputs.runner_labels)) || inputs.runner }}
+    runs-on: ${{ inputs.use_boat && startsWith(inputs.target, 'x86_64-unknown-linux-') && 'boat' || inputs.runner_group != '' && fromJSON(format('{{"group":"{0}","labels":"{1}"}}', inputs.runner_group, inputs.runner_labels)) || inputs.runner }}
     timeout-minutes: 60
     defaults:
       run:

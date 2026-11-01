@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   metadata:
-    runs-on: ubuntu-latest
+    runs-on: boat
     outputs:
       release_tag: ${{ steps.release_tag.outputs.release_tag }}
       v8_version: ${{ steps.v8_version.outputs.version }}
@@ -426,7 +426,7 @@ jobs:
       - metadata
       - build
       - build-windows-source
-    runs-on: ubuntu-latest
+    runs-on: boat
     permissions:
       contents: write
       actions: read

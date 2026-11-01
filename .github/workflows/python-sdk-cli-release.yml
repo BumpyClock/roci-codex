@@ -21,7 +21,7 @@ concurrency:
 jobs:
   resolve-cli-release:
     if: github.repository == 'openai/codex'
-    runs-on: ubuntu-latest
+    runs-on: boat
     permissions:
       contents: read
       actions: read
@@ -77,7 +77,7 @@ jobs:
       - prepare-python-runtime
       - build-python-sdk
       - resolve-cli-release
-    runs-on: ubuntu-latest
+    runs-on: boat
     environment: pypi
     permissions:
       contents: read
@@ -120,7 +120,7 @@ jobs:
       - build-python-sdk
       - publish-python-runtime
       - resolve-cli-release
-    runs-on: ubuntu-latest
+    runs-on: boat
     environment: pypi
     permissions:
       contents: read

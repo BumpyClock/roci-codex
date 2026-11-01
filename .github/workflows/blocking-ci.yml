@@ -43,6 +43,8 @@ jobs:
   sdk:
     name: sdk
     uses: ./.github/workflows/sdk.yml
+    with:
+      use_boat: ${{ vars.CI_LINUX_RUNNER == 'boat' }}
     secrets: inherit
 
   required:

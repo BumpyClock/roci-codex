@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   metadata:
-    runs-on: ubuntu-latest
+    runs-on: boat
     outputs:
       # Older revisions can contain a detector that does not emit this output.
       # Missing must mean "run" so they cannot silently skip the expensive V8

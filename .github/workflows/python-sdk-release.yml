@@ -13,7 +13,7 @@ jobs:
   resolve-python-release:
     if: github.repository == 'openai/codex'
     name: resolve-python-release
-    runs-on: ubuntu-latest
+    runs-on: boat
     permissions:
       contents: read
     outputs:
@@ -95,7 +95,7 @@ jobs:
       - prepare-python-runtime
       - build-python-sdk
       - resolve-python-release
-    runs-on: ubuntu-latest
+    runs-on: boat
     environment: pypi
     permissions:
       contents: read
@@ -137,7 +137,7 @@ jobs:
       - build-python-sdk
       - publish-python-runtime
       - resolve-python-release
-    runs-on: ubuntu-latest
+    runs-on: boat
     environment: pypi
     permissions:
       contents: read

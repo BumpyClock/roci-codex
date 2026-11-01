@@ -20,7 +20,7 @@ permissions: {}
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    runs-on: boat
     timeout-minutes: 60
     environment: codex-r2-publisher
     permissions:

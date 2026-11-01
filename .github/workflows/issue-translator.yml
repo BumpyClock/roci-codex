@@ -10,7 +10,7 @@ jobs:
     name: Translate non-English issue
     # Prevent runs on forks (requires OpenAI API key, wastes Actions minutes)
     if: github.repository == 'openai/codex'
-    runs-on: ubuntu-latest
+    runs-on: boat
     environment: issue-triage
     permissions:
       contents: read
@@ -63,7 +63,7 @@ jobs:
     name: Update issue with English translation
     needs: translate-issue
     if: ${{ needs.translate-issue.result == 'success' }}
-    runs-on: ubuntu-latest
+    runs-on: boat
     permissions:
       contents: read
       issues: write

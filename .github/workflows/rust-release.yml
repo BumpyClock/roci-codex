@@ -25,7 +25,7 @@ concurrency:
 
 jobs:
   tag-check:
-    runs-on: ubuntu-latest
+    runs-on: boat
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -60,7 +60,7 @@ jobs:
   build:
     needs: tag-check
     name: Build - ${{ matrix.runner }} - ${{ matrix.target }} - ${{ matrix.bundle }}
-    runs-on: ${{ matrix.runs_on || matrix.runner }}
+    runs-on: ${{ vars.CI_LINUX_RUNNER == 'boat' && startsWith(matrix.target, 'x86_64-unknown-linux-') && 'boat' || matrix.runs_on || matrix.runner }}
     # Linux releases also build the native voice runtime in this job.
     timeout-minutes: 120
     permissions:
@@ -603,7 +603,7 @@ jobs:
     needs: [build, build-macos-voice]
     if: ${{ always() && needs.build.result == 'success' && needs.build-macos-voice.result == 'success' }}
     name: Sign macOS binaries - ${{ matrix.target }} - ${{ matrix.bundle }}
-    runs-on: ubuntu-latest
+    runs-on: boat
     timeout-minutes: 45
     environment:
       name: codesigning
@@ -1128,7 +1128,7 @@ jobs:
   sign-macos-dmg:
     needs: package-macos
     name: Sign macOS DMG - ${{ matrix.target }}
-    runs-on: ubuntu-latest
+    runs-on: boat
     timeout-minutes: 45
     environment:
       name: codesigning
@@ -1485,7 +1485,7 @@ jobs:
       - build
       - finalize-macos
       - build-windows
-    runs-on: ubuntu-latest
+    runs-on: boat
     permissions:
       contents: read
 
@@ -1554,7 +1554,7 @@ jobs:
             needs.provisioned-macos-candidate.result == 'skipped'))
       }}
     name: release
-    runs-on: ubuntu-latest
+    runs-on: boat
     permissions:
       contents: write
     outputs:
@@ -1719,7 +1719,7 @@ jobs:
   publish-dotslash:
     name: publish-dotslash
     needs: release
-    runs-on: ubuntu-latest
+    runs-on: boat
     permissions:
       contents: write
 
@@ -1759,6 +1759,7 @@ jobs:
       }}
     name: publish-npm
     needs: release
+    # Tokenless npm trusted publishing requires a GitHub-hosted runner.
     runs-on: ubuntu-latest
     permissions:
       id-token: write # Required for OIDC
@@ -1920,7 +1921,7 @@ jobs:
         needs.release.result == 'success' &&
         !contains(needs.release.outputs.version, '-')
       }}
-    runs-on: ubuntu-latest
+    runs-on: boat
     continue-on-error: true
     permissions: {}
     environment:
@@ -1951,7 +1952,7 @@ jobs:
       }}
     # This job only invokes a GitHub Action to open/update the winget-pkgs PR;
     # it does not execute Windows-only tooling, so Linux is sufficient.
-    runs-on: ubuntu-latest
+    runs-on: boat
     permissions:
       contents: read
     environment:
@@ -1988,7 +1989,7 @@ jobs:
       - release
       - publish-r2
       - publish-npm
-    runs-on: ubuntu-latest
+    runs-on: boat
 
     steps:
       - name: Update latest-alpha-cli branch

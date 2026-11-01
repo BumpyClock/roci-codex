@@ -5,7 +5,7 @@ on:
 
 jobs:
   build-test:
-    runs-on: ubuntu-latest
+    runs-on: boat
     timeout-minutes: 10
     env:
       NODE_OPTIONS: --max-old-space-size=4096

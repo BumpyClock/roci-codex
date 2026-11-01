@@ -21,15 +21,18 @@ jobs:
       - name: Detect changed paths (no external action)
         id: detect
         shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
 
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            BASE_SHA='${{ github.event.pull_request.base.sha }}'
-            HEAD_SHA='${{ github.event.pull_request.head.sha }}'
-            echo "Base SHA: $BASE_SHA"
-            echo "Head SHA: $HEAD_SHA"
-            mapfile -t files < <(git diff --name-only --no-renames "$BASE_SHA" "$HEAD_SHA")
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            paths=$(mktemp)
+            trap 'rm -f "$paths"' EXIT
+            # Process substitution hides git's exit status from mapfile/set -e.
+            git diff --name-only --no-renames -z "$BASE_SHA" "$HEAD_SHA" -- > "$paths"
+            mapfile -d '' -t files < "$paths"
           else
             # On manual runs, default to the full fast-PR bundle.
             files=("codex-rs/force" "tools/argument-comment-lint/force" ".github/force")
@@ -40,17 +43,24 @@ jobs:
           argument_comment_lint_package=false
           workflows=false
           for f in "${files[@]}"; do
-            [[ $f == codex-rs/* ]] && codex=true
-            [[ $f == codex-rs/* || $f == tools/argument-comment-lint/* || $f == justfile ]] && argument_comment_lint=true
-            [[ $f == defs.bzl || $f == workspace_root_test_launcher.sh.tpl || $f == workspace_root_test_launcher.bat.tpl ]] && argument_comment_lint=true
-            [[ $f == tools/argument-comment-lint/* || $f == .github/workflows/rust-ci.yml || $f == .github/workflows/rust-ci-full.yml ]] && argument_comment_lint_package=true
-            [[ $f == .github/* ]] && workflows=true
+            # Only known documentation can skip checks. Unknown/shared inputs,
+            # including hidden paths and Rust files outside codex-rs, run fully.
+            case "$f" in
+              docs/*.md) continue ;;
+            esac
+            codex=true
+            argument_comment_lint=true
+            argument_comment_lint_package=true
+            workflows=true
           done
 
           echo "argument_comment_lint=$argument_comment_lint" >> "$GITHUB_OUTPUT"
           echo "argument_comment_lint_package=$argument_comment_lint_package" >> "$GITHUB_OUTPUT"
           echo "codex=$codex" >> "$GITHUB_OUTPUT"
           echo "workflows=$workflows" >> "$GITHUB_OUTPUT"
+
+      - name: Test changed-path detector and required aggregate
+        run: python3 .github/scripts/test_rust_ci_changed_paths.py
 
       - name: Check for a clean worktree
         if: always() && !cancelled()
@@ -237,9 +247,13 @@ jobs:
           echo "general: ${{ needs.general.result }}"
           echo "shear  : ${{ needs.cargo_shear.result }}"
 
-          # If nothing relevant changed (PR touching only root README, etc.),
-          # declare success regardless of other jobs.
-          if [[ "${NEEDS_CHANGED_OUTPUTS_ARGUMENT_COMMENT_LINT}" != 'true' && "${NEEDS_CHANGED_OUTPUTS_CODEX}" != 'true' && "${NEEDS_CHANGED_OUTPUTS_WORKFLOWS}" != 'true' ]]; then
+          [[ "$NEEDS_CHANGED_RESULT" == 'success' ]] || { echo 'changed detector did not succeed'; exit 1; }
+          for value in "$NEEDS_CHANGED_OUTPUTS_ARGUMENT_COMMENT_LINT" "$NEEDS_CHANGED_OUTPUTS_CODEX" "$NEEDS_CHANGED_OUTPUTS_WORKFLOWS" "$NEEDS_CHANGED_OUTPUTS_ARGUMENT_COMMENT_LINT_PACKAGE"; do
+            [[ "$value" == 'true' || "$value" == 'false' ]] || { echo 'missing/invalid detector output'; exit 1; }
+          done
+
+          # Only a successful detector with explicit false outputs can skip.
+          if [[ "${NEEDS_CHANGED_OUTPUTS_ARGUMENT_COMMENT_LINT}" != 'true' && "${NEEDS_CHANGED_OUTPUTS_CODEX}" != 'true' && "${NEEDS_CHANGED_OUTPUTS_WORKFLOWS}" != 'true' && "${NEEDS_CHANGED_OUTPUTS_ARGUMENT_COMMENT_LINT_PACKAGE}" != 'true' ]]; then
             echo 'No relevant changes -> CI not required.'
             exit 0
           fi
@@ -257,6 +271,7 @@ jobs:
             [[ '${{ needs.cargo_shear.result }}' == 'success' ]] || { echo 'cargo_shear failed'; exit 1; }
           fi
         env:
+          NEEDS_CHANGED_RESULT: ${{ needs.changed.result }}
           NEEDS_CHANGED_OUTPUTS_ARGUMENT_COMMENT_LINT: ${{ needs.changed.outputs.argument_comment_lint }}
           NEEDS_CHANGED_OUTPUTS_CODEX: ${{ needs.changed.outputs.codex }}
           NEEDS_CHANGED_OUTPUTS_WORKFLOWS: ${{ needs.changed.outputs.workflows }}

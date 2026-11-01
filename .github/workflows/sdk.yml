@@ -2,12 +2,16 @@ name: sdk
 
 on:
   workflow_call:
+    inputs:
+      use_boat:
+        description: Use Boat for compatible Linux x64 jobs instead of inherited runner pools
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   python-sdk-installation:
-    runs-on:
-      group: ${{ github.event.repository.name }}-runners
-      labels: ${{ github.event.repository.name }}-linux-x64
+    runs-on: ${{ inputs.use_boat && 'boat' || fromJSON(format('{{"group":"{0}-runners","labels":"{0}-linux-x64"}}', github.event.repository.name)) }}
     timeout-minutes: 10
     steps:
       - name: Checkout repository
@@ -36,9 +40,7 @@ jobs:
             '
 
   sdks:
-    runs-on:
-      group: ${{ github.event.repository.name }}-runners
-      labels: ${{ github.event.repository.name }}-linux-x64
+    runs-on: ${{ inputs.use_boat && 'boat' || fromJSON(format('{{"group":"{0}-runners","labels":"{0}-linux-x64"}}', github.event.repository.name)) }}
     timeout-minutes: 20
     environment:
       name: bazel
